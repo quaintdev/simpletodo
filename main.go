@@ -10,13 +10,16 @@ import (
 
 func main() {
 	rand.Seed(time.Now().UnixNano())
+	tItems = make(map[string]*Todo)
 	// Serve static files
 	fs := http.FileServer(http.Dir("static"))
 	http.Handle("/", fs)
 
 	http.HandleFunc("/todo/add", handleAddAdvanced)
 	http.HandleFunc("/todo/checked", handleTodoChecked)
+
 	http.ListenAndServe(":8080", nil)
+
 }
 
 func handleAdd(w http.ResponseWriter, r *http.Request) {
@@ -49,16 +52,22 @@ type Todo struct {
 
 func handleTodoChecked(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(r.URL.Query())
+	for k := range r.URL.Query() {
+		if t, ok := tItems[k]; ok {
+			t.IsChecked = true
+		}
+	}
+	w.WriteHeader(http.StatusOK)
 }
 
-var tItems []Todo
+var tItems map[string]*Todo
 
 func handleAddAdvanced(w http.ResponseWriter, r *http.Request) {
 	todo := Todo{
 		Id:   RandStringRunes(3),
 		Item: r.URL.Query()["contains"][0],
 	}
-	tItems = append(tItems, todo)
+	tItems[todo.Id] = &todo
 	tmpl, err := template.ParseFiles("./static/todoitem.html")
 	if err != nil {
 		fmt.Println(err)
