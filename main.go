@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
+	"text/template"
 	"time"
 )
 
@@ -13,8 +14,8 @@ func main() {
 	fs := http.FileServer(http.Dir("static"))
 	http.Handle("/", fs)
 
-	http.HandleFunc("/todo/add", handleAdd)
-
+	http.HandleFunc("/todo/add", handleAddAdvanced)
+	http.HandleFunc("/todo/checked", handleTodoChecked)
 	http.ListenAndServe(":8080", nil)
 }
 
@@ -38,4 +39,30 @@ func RandStringRunes(n int) string {
 		b[i] = letterRunes[rand.Intn(len(letterRunes))]
 	}
 	return string(b)
+}
+
+type Todo struct {
+	Id        string
+	Item      string
+	IsChecked bool
+}
+
+func handleTodoChecked(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(r.URL.Query())
+}
+
+var tItems []Todo
+
+func handleAddAdvanced(w http.ResponseWriter, r *http.Request) {
+	todo := Todo{
+		Id:   RandStringRunes(3),
+		Item: r.URL.Query()["contains"][0],
+	}
+	tItems = append(tItems, todo)
+	tmpl, err := template.ParseFiles("./static/todoitem.html")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	tmpl.Execute(w, todo)
 }
