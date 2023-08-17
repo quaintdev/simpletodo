@@ -2,36 +2,38 @@ package main
 
 import (
 	"fmt"
+	"html/template"
+	"log"
 	"math/rand"
 	"net/http"
-	"text/template"
 	"time"
 )
 
 func main() {
 	rand.Seed(time.Now().UnixNano())
 	tItems = make(map[string]*Todo)
-	// Serve static files
-	fs := http.FileServer(http.Dir("static"))
-	http.Handle("/", fs)
 
 	http.HandleFunc("/todo/add", handleAddAdvanced)
 	http.HandleFunc("/todo/checked", handleTodoChecked)
-
+	http.HandleFunc("/", handleTodoList)
 	http.ListenAndServe(":8080", nil)
 
 }
 
-func handleAdd(w http.ResponseWriter, r *http.Request) {
-	id := RandStringRunes(3)
-	item := r.URL.Query()["contains"][0]
-	html := fmt.Sprintf(`
-	<li>
-		<input type="checkbox" id="%s">
-    	<label for="%s">%s</label>
-	</li>`, id, id, item)
-
-	w.Write([]byte(html))
+func handleTodoList(w http.ResponseWriter, r *http.Request) {
+	tmpl, err := template.ParseFiles("./static/index.html", "./static/todoitem.html")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	var todos []Todo
+	for _, v := range tItems {
+		todos = append(todos, *v)
+	}
+	err = tmpl.Execute(w, todos)
+	if err != nil {
+		log.Println(err)
+	}
 }
 
 var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
@@ -70,8 +72,11 @@ func handleAddAdvanced(w http.ResponseWriter, r *http.Request) {
 	tItems[todo.Id] = &todo
 	tmpl, err := template.ParseFiles("./static/todoitem.html")
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
-	tmpl.Execute(w, todo)
+	err = tmpl.ExecuteTemplate(w, "todo", todo)
+	if err != nil {
+		log.Println(err)
+	}
 }
