@@ -13,10 +13,11 @@ func main() {
 	rand.Seed(time.Now().UnixNano())
 	tItems = make(map[string]*Todo)
 
+	log.Println("Starting server on port 8981")
 	http.HandleFunc("/todo/add", handleAddAdvanced)
 	http.HandleFunc("/todo/checked", handleTodoChecked)
 	http.HandleFunc("/", handleTodoList)
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(":8981", nil)
 
 }
 
@@ -53,10 +54,13 @@ type Todo struct {
 }
 
 func handleTodoChecked(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(r.URL.Query())
-	for k := range r.URL.Query() {
+	for k, v := range r.URL.Query() {
 		if t, ok := tItems[k]; ok {
-			t.IsChecked = true
+			if len(v) == 2 && v[0] == "on" {
+				t.IsChecked = true
+			} else if len(v) == 1 && v[0] == "off" {
+				t.IsChecked = false
+			}
 		}
 	}
 	w.WriteHeader(http.StatusOK)

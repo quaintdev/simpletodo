@@ -1,6 +1,7 @@
 {{define "todo"}}
 <li>
-	<input type="checkbox" hx-get="/todo/checked" {{if .IsChecked}}checked{{end}} id="{{.Id}}" name="{{.Id}}">
+	<input type="checkbox" hx-get="/todo/checked" {{if .IsChecked}}checked{{end}} id="{{.Id}}" name="{{.Id}}" hx-include="[name='{{.Id}}']">
+	<input type="hidden" name="{{.Id}}" value="off"/>
 	<label for="{{.Id}}">{{.Item}}</label>
 </li>
 {{end}}
